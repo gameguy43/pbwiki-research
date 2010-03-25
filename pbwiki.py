@@ -24,7 +24,7 @@ class PBWiki(object):
     a PBWiki site.
     url - the wiki base URL in (EXACTLY) the form 'https://site_name.pbwiki.com'
     """
-    #TODO: this fails if the wiki has a trailing slash.  let's fix that programatically
+    # TODO: this fails if the wiki has a trailing slash.  let's fix that programatically
     self.url = url
     self._authenticate()
 
