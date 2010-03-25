@@ -7,3 +7,6 @@ wikil = []
 
 for row in wikid:
     wikil.append(row['wikiname']);
+
+for row in wikil:
+    print '<option value="http://'+ row + '">' + row + '</option>'
