@@ -70,8 +70,19 @@ fake_json_resp =
 function load_url(){
     var revisions = {};
     var req = new XMLHttpRequest();
+    //var base_url = document.get_revs.wiki_url.value;
+    //var base_url = 'http://pbworks.com';
+    //var base_url = 'http://basically.pbworks.com/';
+    var base_url = 'http://jqueryui.pbworks.com/';
+    $.get(base_url);
+    $.get('http://madebyparker.com');
 
-    url = document.get_revs.wiki_url.value + '/api_v2/?op=GetChanges&_type=jsontext';
+    //url = base_url + '/api_v2/?op=GetChanges&_type=jsontext';
+    url = 'proxy.php?url=' + base_url + '/api_v2/?op=GetChanges&_type=jsontext';
+    $.getJSON(url, function(data) {
+        console.log(data);
+    });
+
     req.open( "GET", url, true );
     req.onreadystatechange = function () {
         if ( req.readyState == 4 && req.status == 200 ) {
@@ -79,7 +90,7 @@ function load_url(){
         }
     };
     req.send(null);
-    revisions = fake_json_resp;
+    revisions = req.responseXML;
     sorted_changes = sort_revisions(revisions.changes);
     update_page_menu(sorted_changes);
     next_rev();
