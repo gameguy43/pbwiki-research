@@ -1,0 +1,15 @@
+fake_json_resp = 
+    {
+        "_auth_role":"read",
+        "_auth_via":"cookie",
+        "_perm_cache_times":{"pagetime":1263165951,"filetime":1263165951,"permtime":1263165951,"foldertime":1263165951,"commenttime":1263165951},
+        "_valid_as_of":1268764607,
+        "changes":[
+            {"hash":"VCjjHp1YLOxW","user":false,"op":"mod","op_word":"edited","time":"1212763142","url":"http:\/\/beatricewiki.pbworks.com\/Language-Arts","type":"page","title":"Language Arts"},
+            {"hash":"RttTPiTYyW0o","user":false,"op":"mod","op_word":"edited","time":"1212762544","url":"http:\/\/beatricewiki.pbworks.com\/Language-Arts","type":"page","title":"Language Arts"},
+            {"hash":"L0BBEiQt4N04","user":false,"op":"mod","op_word":"edited","time":"1212761999","url":"http:\/\/beatricewiki.pbworks.com\/Language-Arts","type":"page","title":"Language Arts"},
+            {"hash":"Y4HhwXq5TGfw","user":false,"op":"mod","op_word":"edited","time":"1212513431","url":"http:\/\/beatricewiki.pbworks.com\/FrontPage","type":"page","title":"FrontPage"},
+            {"hash":"TDz4FXGDqj1R","user":false,"op":"mod","op_word":"edited","time":"1212513158","url":"http:\/\/beatricewiki.pbworks.com\/Math","type":"page","title":"Math"},
+            {"hash":"fK5Gj4QGyKdX","user":false,"op":"mod","op_word":"edited","time":"1212507149","url":"http:\/\/beatricewiki.pbworks.com\/FrontPage","type":"page","title":"FrontPage"}
+        ]
+    };
