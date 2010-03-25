@@ -79,7 +79,7 @@ function load_url(){
         }
     };
     req.send(null);
-    //revisions = fake_json_resp;
+    revisions = fake_json_resp;
     sorted_changes = sort_revisions(revisions.changes);
     update_page_menu(sorted_changes);
     next_rev();
