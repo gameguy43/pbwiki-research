@@ -1,0 +1,15 @@
+TODO:
+* fix the javascript api caller so that it actually gets json data and we're not just using dummy data any more.
+* fix the page-changer (the drop-down after "Get history"--it doesn't work right now)
+* fix the "Change from prev" button--it doesn't work right now
+** just construct the right query str to get the diff view in the iframe
+
+
+
+planning:
+
+client goal:
+    web interface for researcher 
+        render wiki as it appeared at x days after creation
+        dinner
+    "interface mod"
