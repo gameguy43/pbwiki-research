@@ -1,16 +1,3 @@
-TODO:
-* function to figure out the wiki's creation date (get the home page's first revision date?)
-* ability to view wiki at X /days/ after creation
-* you can hard-code a ceiling date so that coders don't have discrepencies anymore
-
-
-
-* fix the javascript api caller so that it actually gets json data and we're not just using dummy data any more.
-* fix the page-changer (the drop-down after "Get history"--it doesn't work right now)
-* fix the "Change from prev" button--it doesn't work right now
-** just construct the right query str to get the diff view in the iframe
-* write the prev_rev function
-
 ToDo
 ----
 Milestone 1 QualBar:
