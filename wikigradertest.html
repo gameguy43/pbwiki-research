@@ -1,0 +1,282 @@
+<html>
+<!-- Copyright Brandon Stafford 2010                                                         -->
+<!-- Except for Steven Levithan's date format library, under MIT license, and marked as such -->
+<head>
+<style type="text/css">
+    #top_bar {
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        height: 50px;
+        background: orange;
+        border-bottom: 1px solid black;
+        float: left;
+        z-index:2;
+        font-size: 12px;
+        font-weight: normal;
+        font-family: Arial, Verdana, sans-serif;
+        text-align: left;
+        color: black;
+    }
+
+    #top_bar p.info_text {
+        float: left;
+        padding-left: 20px;
+        padding-right: 20px;
+        margin-left: 15px;
+        margin-top: 7px;
+    }
+
+    #top_bar p.rev_list {
+        float: left;
+        padding-left: 20px;
+        padding-right: 20px;
+        margin-left: 35px;
+        margin-top: 0px;
+    }
+
+    #get_revs {
+        margin-top: 10px;
+    }
+
+
+</style>
+
+<link type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/ui-darkness/jquery-ui.css" rel="stylesheet" />	
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://jquery-ui.googlecode.com/svn/tags/latest/ui/minified/jquery-ui.min.js"></script>
+
+<script type="text/javascript">
+
+fake_json_resp = 
+    {
+        "_auth_role":"read",
+        "_auth_via":"cookie",
+        "_perm_cache_times":{"pagetime":1263165951,"filetime":1263165951,"permtime":1263165951,"foldertime":1263165951,"commenttime":1263165951},
+        "_valid_as_of":1268764607,
+        "changes":[
+            {"hash":"VCjjHp1YLOxW","user":false,"op":"mod","op_word":"edited","time":"1212763142","url":"http:\/\/beatricewiki.pbworks.com\/Language-Arts","type":"page","title":"Language Arts"},
+            {"hash":"RttTPiTYyW0o","user":false,"op":"mod","op_word":"edited","time":"1212762544","url":"http:\/\/beatricewiki.pbworks.com\/Language-Arts","type":"page","title":"Language Arts"},
+            {"hash":"L0BBEiQt4N04","user":false,"op":"mod","op_word":"edited","time":"1212761999","url":"http:\/\/beatricewiki.pbworks.com\/Language-Arts","type":"page","title":"Language Arts"},
+            {"hash":"Y4HhwXq5TGfw","user":false,"op":"mod","op_word":"edited","time":"1212513431","url":"http:\/\/beatricewiki.pbworks.com\/FrontPage","type":"page","title":"FrontPage"},
+            {"hash":"TDz4FXGDqj1R","user":false,"op":"mod","op_word":"edited","time":"1212513158","url":"http:\/\/beatricewiki.pbworks.com\/Math","type":"page","title":"Math"},
+            {"hash":"fK5Gj4QGyKdX","user":false,"op":"mod","op_word":"edited","time":"1212507149","url":"http:\/\/beatricewiki.pbworks.com\/FrontPage","type":"page","title":"FrontPage"}
+        ]
+    };
+
+    var sorted_changes = {};
+
+function load_url(){
+    var revisions = {};
+    var req = new XMLHttpRequest();
+
+    url = document.get_revs.wiki_url.value + '/api_v2/?op=GetChanges&_type=jsontext';
+    req.open( "GET", url, true );
+    req.onreadystatechange = function () {
+        if ( req.readyState == 4 && req.status == 200 ) {
+            revisions = JSON.parse(req.responseText);
+        }
+    };
+    req.send(null);
+    //revisions = fake_json_resp;
+    sorted_changes = sort_revisions(revisions.changes);
+    update_page_menu(sorted_changes);
+    next_rev();
+}
+
+function next_rev() {
+    page = document.getElementById("page_list").firstChild.firstChild.nodeValue;
+    d = new Date(parseInt(sorted_changes[page].pop() + "000"));
+    next_rev_url = document.get_revs.wiki_url.value + '/' + page + "." + d.format("UTC:yyyy-mm-dd-HH-MM-ss");
+    document.getElementById("lower").src = next_rev_url;
+}
+
+function sort_revisions(list_of_changes) {
+    var change_dict = {};
+
+    for(i = 0; i < list_of_changes.length; i++)
+    {
+        next_page = list_of_changes[i].title
+        if(change_dict[next_page]) {
+            change_dict[next_page].push(list_of_changes[i].time);
+        } else {
+            change_dict[next_page] = new Array(list_of_changes[i].time);
+        }
+    }
+    return change_dict;
+}
+
+function update_page_menu(change_dict) {
+    var pages = document.getElementById("page_list");
+    while(pages.hasChildNodes())
+    {
+        pages.removeChild(pages.lastChild);
+    }
+    for(var page in change_dict) { 
+        option = document.createElement("option");
+        option.appendChild(document.createTextNode(page));
+        pages.appendChild(option);
+    }
+}
+
+$(function() {
+	$("#after").datepicker();
+});
+
+
+/*
+ * Date Format 1.2.3
+ * (c) 2007-2009 Steven Levithan <stevenlevithan.com>
+ * MIT license
+ *
+ * Includes enhancements by Scott Trenda <scott.trenda.net>
+ * and Kris Kowal <cixar.com/~kris.kowal>
+ *
+ * Accepts a date, a mask, or a date and a mask.
+ * Returns a formatted version of the given date.
+ * The date defaults to the current date/time.
+ * The mask defaults to dateFormat.masks.default.
+ */
+
+var dateFormat = function () {
+	var	token = /d{1,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|[LloSZ]|"[^"]*"|'[^']*'/g,
+		timezone = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g,
+		timezoneClip = /[^-+\dA-Z]/g,
+		pad = function (val, len) {
+			val = String(val);
+			len = len || 2;
+			while (val.length < len) val = "0" + val;
+			return val;
+		};
+
+	// Regexes and supporting functions are cached through closure
+	return function (date, mask, utc) {
+		var dF = dateFormat;
+
+		// You can't provide utc if you skip other args (use the "UTC:" mask prefix)
+		if (arguments.length == 1 && Object.prototype.toString.call(date) == "[object String]" && !/\d/.test(date)) {
+			mask = date;
+			date = undefined;
+		}
+
+		// Passing date through Date applies Date.parse, if necessary
+		date = date ? new Date(date) : new Date;
+		if (isNaN(date)) throw SyntaxError("invalid date");
+
+		mask = String(dF.masks[mask] || mask || dF.masks["default"]);
+
+		// Allow setting the utc argument via the mask
+		if (mask.slice(0, 4) == "UTC:") {
+			mask = mask.slice(4);
+			utc = true;
+		}
+
+		var	_ = utc ? "getUTC" : "get",
+			d = date[_ + "Date"](),
+			D = date[_ + "Day"](),
+			m = date[_ + "Month"](),
+			y = date[_ + "FullYear"](),
+			H = date[_ + "Hours"](),
+			M = date[_ + "Minutes"](),
+			s = date[_ + "Seconds"](),
+			L = date[_ + "Milliseconds"](),
+			o = utc ? 0 : date.getTimezoneOffset(),
+			flags = {
+				d:    d,
+				dd:   pad(d),
+				ddd:  dF.i18n.dayNames[D],
+				dddd: dF.i18n.dayNames[D + 7],
+				m:    m + 1,
+				mm:   pad(m + 1),
+				mmm:  dF.i18n.monthNames[m],
+				mmmm: dF.i18n.monthNames[m + 12],
+				yy:   String(y).slice(2),
+				yyyy: y,
+				h:    H % 12 || 12,
+				hh:   pad(H % 12 || 12),
+				H:    H,
+				HH:   pad(H),
+				M:    M,
+				MM:   pad(M),
+				s:    s,
+				ss:   pad(s),
+				l:    pad(L, 3),
+				L:    pad(L > 99 ? Math.round(L / 10) : L),
+				t:    H < 12 ? "a"  : "p",
+				tt:   H < 12 ? "am" : "pm",
+				T:    H < 12 ? "A"  : "P",
+				TT:   H < 12 ? "AM" : "PM",
+				Z:    utc ? "UTC" : (String(date).match(timezone) || [""]).pop().replace(timezoneClip, ""),
+				o:    (o > 0 ? "-" : "+") + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4),
+				S:    ["th", "st", "nd", "rd"][d % 10 > 3 ? 0 : (d % 100 - d % 10 != 10) * d % 10]
+			};
+
+		return mask.replace(token, function ($0) {
+			return $0 in flags ? flags[$0] : $0.slice(1, $0.length - 1);
+		});
+	};
+}();
+
+// Some common format strings
+dateFormat.masks = {
+	"default":      "ddd mmm dd yyyy HH:MM:ss",
+	shortDate:      "m/d/yy",
+	mediumDate:     "mmm d, yyyy",
+	longDate:       "mmmm d, yyyy",
+	fullDate:       "dddd, mmmm d, yyyy",
+	shortTime:      "h:MM TT",
+	mediumTime:     "h:MM:ss TT",
+	longTime:       "h:MM:ss TT Z",
+	isoDate:        "yyyy-mm-dd",
+	isoTime:        "HH:MM:ss",
+	isoDateTime:    "yyyy-mm-dd'T'HH:MM:ss",
+	isoUtcDateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"
+};
+
+// Internationalization strings
+dateFormat.i18n = {
+	dayNames: [
+		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
+		"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+	],
+	monthNames: [
+		"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+		"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+	]
+};
+
+// For convenience...
+Date.prototype.format = function (mask, utc) {
+	return dateFormat(this, mask, utc);
+};
+
+
+</script>
+</head>
+
+<body>
+    <div id="top_bar">
+        <p class="info_text">       
+            <form id="get_revs" name="get_revs">
+                Wiki domain:<input type="text" name="wiki_url" size="30"/>
+                From: <input type="text" id="after" name="after"/>
+                <input type="button" value="Get history" onClick="load_url()"/>
+                <select id="page_list"/>
+                    <option value="empty">(page list currently empty)</option>
+                </select>
+                <input type="button" value="Prev rev" onClick="prev_rev()"/>
+                <input type="button" value="Next rev" onClick="next_rev()"/>
+                <input type="button" value="Change from prev" onClick="diff()"/>
+            </form>
+        </p>
+        <p id="rev_list">
+        </p>
+    </div>
+    <iframe id="upper" width="100%" height="60px" style="border:none"></iframe>
+    <iframe id="lower" width="100%" height="100%" style="border:none"></iframe>
+
+</body>
+</html>
+
+
