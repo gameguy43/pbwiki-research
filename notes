@@ -20,3 +20,20 @@ client goal:
         render wiki as it appeared at x days after creation
         dinner
     "interface mod"
+
+
+Thursday call with Justin:
+Thu Mar 25 13:20:27 EDT 2010
+Questions:
+ *  How do you feel about a left frame with list(s) rather than dropdown?
+    A: Sure! Do it if it makes sense
+ *  for (1), how do you feel about next, prev, and diff (from prev) instead of just "next" which sometimes shows a page and sometimes shows a diff?
+    A: How about a checkbox that changes next to Next (with diffs) {rev2, diff 2 > 3, rev3, diff 3 > 4, rev4}
+Needs:
+ *  List of coded wiki URL's
+    A: Justin is sending now
+ *  optional: list of all edu wiki's
+    A: Sending, but gmail is iffy.  Also PBworks may not want this published 
+ *  Licenses of all code? Copyright currently retained in exisiting code, python is actually harvard's, html is ???
+    A: Justin controlls license, collaborating in the open is fine for now via github
+    Eventually everything will be released under the correct licenses, expect bsd or better
