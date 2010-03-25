@@ -11,10 +11,40 @@ TODO:
 ** just construct the right query str to get the diff view in the iframe
 * write the prev_rev function
 
+ToDo
+----
+Milestone 1 QualBar:
+ -  make general api calls return to html
+ -  implement call and logic to make buttons work
+    + next
+    - prev
+    - diff from prev
+    - supernext
+    - pages dropdown
+ -  functions: view N days from origin
+    - find creationdate
+    - given N days from origin, return revision for page as of date
+    - dropdown for 1, 5, 30, 400, &etc N days from origin
 
+Milestone 1 PyWorks:
+ -  Make api calls with predictable output
+ -  Store data
+    - root stats: wikiname|pages|dates
+    - users, all users, their data and wiki associations (by wiki or first order?)
+    - front page of wiki for basic analytics
+
+Milestone 2:
+ -  Hardcode ceiling date for all evaluations
+
+Do at all?:
+ -  Left sidebar
+    - run stats to ma
+
+
+
+++++++++++++++++++++++++++++++++++++++++
 
 planning:
-
 client goal:
     web interface for researcher 
         render wiki as it appeared at x days after creation
