@@ -78,7 +78,13 @@ function set_wiki(){
         update_location_reporting()
         load_revision();
     });
+}
 
+function diff_against_prev(){
+    d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key-1] + "000"));
+    d2 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
+    new_url = current_wiki_url + '/sdiff.php?first=' + current_page + "." + d1.format("UTC:yyyy-mm-dd-HH-MM-ss") + '&second=' + current_page + "." + d2.format("UTC:yyyy-mm-dd-HH-MM-ss");
+    $("#results")[0].src = new_url;
 }
 
 function update_next_prev_buttons(){
