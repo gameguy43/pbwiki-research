@@ -140,7 +140,7 @@ function sort_revisions(list_of_changes) {
     {
         next_page = list_of_changes[i].title
         if(change_dict[next_page]) {
-            change_dict[next_page].push(list_of_changes[i].time);
+            change_dict[next_page].unshift(list_of_changes[i].time);
         } else {
             change_dict[next_page] = new Array(list_of_changes[i].time);
         }
@@ -229,7 +229,7 @@ function days_since(){
 }
 
 function diff_against_prev(){
-    d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key+1] + "000"));
+    d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key-1] + "000"));
     d2 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
     new_url = current_wiki_url + '/sdiff.php?first=' + current_page + "." + d1.format("UTC:yyyy-mm-dd-HH-MM-ss") + '&second=' + current_page + "." + d2.format("UTC:yyyy-mm-dd-HH-MM-ss");
     $("#results")[0].src = new_url;
@@ -238,8 +238,8 @@ function diff_against_prev(){
 function update_next_prev_buttons(){
     var next_button = $('#next_button');
     var prev_button = $('#prev_button');
-    var should_show_prev = current_page_version_key > 0;
-    var should_show_next = current_page_version_key < current_wiki_sorted_versions[current_page].length-1;
+    var should_show_next = current_page_version_key > 0;
+    var should_show_prev = current_page_version_key < current_wiki_sorted_versions[current_page].length-1;
     if(should_show_prev){
         prev_button.show();
     }
@@ -264,14 +264,14 @@ function update_current_page(){
 
 
 function prev_rev() {
-    current_page_version_key -= 1;
+    current_page_version_key += 1;
     update_next_prev_buttons();
     update_location_reporting()
     load_revision()
 }
 
 function next_rev() {
-    current_page_version_key += 1;
+    current_page_version_key -= 1;
     update_next_prev_buttons();
     update_location_reporting()
     load_revision()
@@ -475,13 +475,13 @@ Date.prototype.format = function (mask, utc) {
                 <span id="rev_list">
                     revision 
                 <span id="revision_number">X</span>/<span id="total_revision_count">X</span>
-                <span style="font-size:.8em;">(where 1 is the most recent)</span>
+                <span style="font-size:.8em;">(1 is the oldest)</span>
                 </span>
                 </span>
                 |
                 navigation:
-                <input type="button" value="< Newer" onClick="prev_rev()" id="prev_button"/>
-                <input type="button" value="Older >" onClick="next_rev()" id="next_button"/>
+                <input type="button" value="< Older" onClick="next_rev()" id="next_button"/>
+                <input type="button" value="Newer >" onClick="prev_rev()" id="prev_button"/>
                 <!--Days since wiki creation: <input type="text" id="since" name="since"/>
                 <input type="button" value="Go" onClick="days_since()"/>
                 -->
