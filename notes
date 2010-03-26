@@ -1,11 +1,11 @@
 ToDo
 ----
 Milestone 1 QualBar:
- -  make general api calls return to html
+ +  make general api calls return to html
  -  implement call and logic to make buttons work
     + next
-    - prev
-    - diff from prev
+    + prev
+    + diff from prev
     - supernext
     - pages dropdown
  -  functions: view N days from origin
