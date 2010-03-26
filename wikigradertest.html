@@ -20,6 +20,12 @@
         background-color: #fff;
        height: 100%;
     }
+    body{
+        font-size: .8em;
+    }
+    input{
+        padding: 0;
+    }
     /*
     #top_bar {
         position: fixed;
@@ -67,12 +73,21 @@
 <script type="text/javascript" src="http://jquery-ui.googlecode.com/svn/tags/latest/ui/minified/jquery-ui.min.js"></script>
 
 <script type="text/javascript">
-//run after dom load
-var current_wiki_url = 'http://basically.pbworks.com/';
-var current_page = '';
+var current_wiki_url = 'http://basically.pbworks.com';
+//http://andrewscad.pbworks.com
+var current_page = ''; //name of current page
 var current_wiki_sorted_versions = {};
 var current_page_version_key = 0;
+
+//for allowing you to jump to wiki page as it appeared X days after wiki creation
 var current_wiki_earliest_edit_timestamp = 9999999999999;
+var current_wiki_earliest_edit_datestr = '';
+//current_wiki_earliest_edit_timestamp + days_since (in seconds) = 
+var current_wiki_days_since_ceiling_timestamp = 99999999999999999999999;
+
+var debugmode = true;
+
+//run after dom load
 $(function(){
     $("#page_list").change(function(){
         update_current_page();
@@ -81,7 +96,6 @@ $(function(){
         update_location_reporting()
         load_revision();
     });
-    wiki_url = 'http://basically.pbworks.com/';
 	$("#after").datepicker();
     update_next_prev_buttons();
     window.onresize = function() { resize_results(); };
@@ -90,17 +104,21 @@ $(function(){
 function set_wiki(){
     var revisions = {};
     var req = new XMLHttpRequest();
-    //var current_wiki_url = document.get_revs.wiki_url.value;
+    current_wiki_url = document.get_revs.wiki_url.value;
     //$.get(current_wiki_url);
+    if(debugmode){
+        current_wiki_url = 'http://basically.pbworks.com/';
+    }
 
-    //url = current_wiki_url + '/api_v2/?op=GetChanges&_type=jsontext';
+    //url = current_wiki_url + '/api_v2/?op=GetChanges&_type=jsontext&reverse=false';
     url = 'proxy.php?url=' + current_wiki_url + '/api_v2/?op=GetChanges&_type=jsontext';
     $.getJSON(url, function(data) {
         current_wiki_sorted_versions = sort_revisions(data.changes);
         update_page_menu(current_wiki_sorted_versions);
         current_page = $("#page_list")[0].firstChild.firstChild.nodeValue;
         update_next_prev_buttons();
-        update_location_reporting()
+        update_location_reporting();
+        update_wiki_age_reporting();
         load_revision();
     });
 }
@@ -133,22 +151,37 @@ function load_revision(){
 
 function days_since(){
     var input = $('#since')[0].value;
-    var input_in_days = input *60*60*24;
-    var ceiling = current_wiki_earliest_edit_timestamp + input_in_days;
-    var most_recent_revision_date = current_wiki_sorted_versions[current_page][0];
+    var input_in_seconds = Math.floor((input*60*60*24));
+    current_wiki_days_since_ceiling_timestamp = parseInt(current_wiki_earliest_edit_timestamp) + parseInt(input_in_seconds);
+    //start with the oldest revision of this page
+    var most_recent_revision_date = current_wiki_sorted_versions[current_page][current_wiki_sorted_versions[current_page].length-1];
     var iterations =  current_wiki_sorted_versions[current_page].length;
+    console.log("iterations: " + iterations);
+    console.log("ceiling: " + current_wiki_days_since_ceiling_timestamp);
+    console.log("earliest: " + current_wiki_earliest_edit_timestamp);
+    var we_confirmed_this_page_was_created_after_the_specified_date = false;
     for(i = 0; i < iterations; i++){
-        if(current_wiki_sorted_versions[current_page][i] > most_recent_revision_date && current_wiki_sorted_versions[current_page][i] < ceiling){
+        console.log("current winner: " + most_recent_revision_date);
+        console.log("looking at: " + current_wiki_sorted_versions[current_page][i]);
+        if(current_wiki_sorted_versions[current_page][i] >= most_recent_revision_date && current_wiki_sorted_versions[current_page][i] <= current_wiki_days_since_ceiling_timestamp){
+            most_recent_revision_date = current_wiki_sorted_versions[current_page][i]
             current_page_version_key = i;
+            console.log("change");
+            we_confirmed_this_page_was_created_after_the_specified_date = true;
         }
     }
+    if(!we_confirmed_this_page_was_created_after_the_specified_date){
+        alert('this page hadnt been created yet!');
+    }
+    else{
     update_next_prev_buttons();
     update_location_reporting()
     load_revision();
+    }
 }
 
 function diff_against_prev(){
-    d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key-1] + "000"));
+    d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key+1] + "000"));
     d2 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
     new_url = current_wiki_url + '/sdiff.php?first=' + current_page + "." + d1.format("UTC:yyyy-mm-dd-HH-MM-ss") + '&second=' + current_page + "." + d2.format("UTC:yyyy-mm-dd-HH-MM-ss");
     $("#results")[0].src = new_url;
@@ -196,6 +229,9 @@ function next_rev() {
     load_revision()
 }
 
+function update_wiki_age_reporting() {
+    $('#wiki_age_timestamp').html(current_wiki_earliest_edit_datestr);
+}
 
 function update_location_reporting() {
     $('#revision_number').html(current_page_version_key+1);
@@ -369,16 +405,26 @@ Date.prototype.format = function (mask, utc) {
                 Wiki domain:<input type="text" name="wiki_url" size="30"/>
                 <!--From: <input type="text" id="after" name="after"/> -->
                 <input type="button" value="Get history" onClick="set_wiki()"/>
+                page: 
                 <select id="page_list"/>
                     <option value="empty">(page list currently empty)</option>
                 </select>
                 <br />
                 <span id="rev_list">
+                    revision 
                 <span id="revision_number">X</span>/<span id="total_revision_count">X</span>
+                (where 1 is the most recent)
                 </span>
-                <input type="button" value="Prev rev" onClick="prev_rev()" id="prev_button"/>
-                <input type="button" value="Next rev" onClick="next_rev()" id="next_button"/>
-                Days since creation: <input type="text" id="since" name="since"/>
+                <span id="wiki_age">
+                    This wiki was created
+                <span id="wiki_age_timestamp">XXXX-XX-XX-XX-XX-XX</span>
+                .
+                </span>
+                <br />
+                navigation:
+                <input type="button" value="< Newer" onClick="prev_rev()" id="prev_button"/>
+                <input type="button" value="Older >" onClick="next_rev()" id="next_button"/>
+                Days since wiki creation: <input type="text" id="since" name="since"/>
                 <input type="button" value="Go" onClick="days_since()"/>
                 <input type="button" value="difference from prev" onClick="diff_against_prev()"/>
             </form>
