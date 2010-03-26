@@ -10,7 +10,7 @@ Milestone 1 QualBar:
     + next
     + prev
     + diff from prev
-    - supernext
+    + supernext
     - pages dropdown
  +  functions: view N days from origin
     + find creationdate

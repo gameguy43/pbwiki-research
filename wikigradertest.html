@@ -105,7 +105,7 @@ $(function(){
         days_since();
     });
 	$("#after").datepicker();
-    window.onresize = function() { resize_results(); };
+    //window.onresize = function() { resize_results(); };
 });
 
 function set_wiki(){
@@ -185,6 +185,8 @@ function load_revision(){
     d = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
     new_url = current_wiki_url + '/' + current_page + "." + d.format("UTC:yyyy-mm-dd-HH-MM-ss");
     $("#results")[0].src = new_url;
+    in_diff_mode = false;
+    $("#diff_button")[0].value = 'changes since prev';
 }
 
 //TODO: this is probably deprecated now... sadly...
@@ -232,6 +234,10 @@ function days_since(){
 
 function diff_click(){
     if(!in_diff_mode){
+        if(current_page_version_key == 0){
+            alert("nothing to diff against--you're on the oldest revision of this page");
+            return false;
+        }
         d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key-1] + "000"));
         d2 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
         new_url = current_wiki_url + '/sdiff.php?first=' + current_page + "." + d1.format("UTC:yyyy-mm-dd-HH-MM-ss") + '&second=' + current_page + "." + d2.format("UTC:yyyy-mm-dd-HH-MM-ss");
@@ -241,16 +247,26 @@ function diff_click(){
     }
     else{
         load_revision();
-        in_diff_mode = false;
-        $("#diff_button")[0].value = 'changes since prev';
+        update_location_reporting()
     }
+}
+
+function supernext(){
+    if(in_diff_mode || current_page_version_key == 0){
+        next_rev();
+    }
+    else{
+        diff_click();
+    }
+    update_location_reporting();
+
 }
 
 function update_next_prev_buttons(){
     var next_button = $('#next_button');
     var prev_button = $('#prev_button');
-    var should_show_next = current_page_version_key > 0;
-    var should_show_prev = current_page_version_key < current_wiki_sorted_versions[current_page].length-1;
+    var should_show_prev = current_page_version_key > 0;
+    var should_show_next = current_page_version_key < current_wiki_sorted_versions[current_page].length-1;
     if(should_show_prev){
         prev_button.show();
     }
@@ -275,14 +291,18 @@ function update_current_page(){
 
 
 function prev_rev() {
-    current_page_version_key += 1;
+    current_page_version_key -= 1;
     update_next_prev_buttons();
     update_location_reporting()
     load_revision()
 }
 
 function next_rev() {
-    current_page_version_key -= 1;
+    if(!current_wiki_sorted_versions[current_page][current_page_version_key+1]){
+        alert("you're already at the newest revision!");
+        return false;
+    }
+    current_page_version_key += 1;
     update_next_prev_buttons();
     update_location_reporting()
     load_revision()
@@ -293,7 +313,12 @@ function update_wiki_age_reporting() {
 }
 
 function update_location_reporting() {
-    $('#revision_number').html(current_page_version_key+1);
+    var current_location = current_page_version_key+1;
+    if(in_diff_mode){
+        current_location += "v" + current_page_version_key;
+    }
+
+    $('#revision_number').html(current_location);
     $('#total_revision_count').html(current_wiki_sorted_versions[current_page].length);
 }
 
@@ -491,12 +516,13 @@ Date.prototype.format = function (mask, utc) {
                 </span>
                 |
                 navigation:
-                <input type="button" value="< Older" onClick="next_rev()" id="next_button"/>
-                <input type="button" value="Newer >" onClick="prev_rev()" id="prev_button"/>
+                <input type="button" value="< Older" onClick="prev_rev()" id="prev_button"/>
+                <input type="button" value="Newer >" onClick="next_rev()" id="next_button"/>
                 <!--Days since wiki creation: <input type="text" id="since" name="since"/>
                 <input type="button" value="Go" onClick="days_since()"/>
                 -->
                 <input type="button" id="diff_button" value="difference from prev" onClick="diff_click()"/>
+                <input type="button" id="supernext_button" value="SuperNext>>" onClick="supernext()"/>
             </form>
         </p>
     </div>
