@@ -81,6 +81,10 @@ class PBWiki(object):
       alldates.sort(key=operator.itemgetter(0))
       return alldates
   
+    def get_files(self, url):
+        wiki_files = self._api_call('GetFiles')
+        return wiki_files
+
     def get_pages(self, url):
         wiki_pages = self._api_call('GetPages')
         return wiki_pages
@@ -91,11 +95,31 @@ class PBWiki(object):
 
 ## Above is a PBWiki class
 ## Below is code for traversing, calling and storing wiki data
+def parse_files(json):
+    # {"_auth_role":"admin","_auth_via":"cookie","_optimized_paging":true,"_perm_cache_times":{"foldertime":1269477576,"filetime":1269477576,"permtime":1269477575},"_total_count":0,"_valid_as_of":1269586477,"files":[]}
+    files_dict = {
+        'files_checked_at' : json['_valid_as_of'],
+        'files_count' : json['_total_count'],
+        'file_list' : json['files'],
+    }
+    return files_dict
 
-def parse_pages(dict):
+def parse_times(json):
+    times_dict = {
+        'times_checked_at' : json['_valid_as_of'],
+        'comment_time' : json['commenttime'],
+        'file_time' : json['filetime'],
+        'pageedit_time' : json['pagetime'],
+        'permission_time' : json['permtime'],
+        'tag_time' : json['tagtime']
+    }
+    return times_dict
+    
+
+def parse_pages(json):
     # Take json from get_pages, turn into nice dict
-    pages_count = dict['_total_count']
-    pages = dict['pages']
+    pages_count = json['_total_count']
+    pages = json['pages']
     pages_list = []
     for i in pages:
         pages_list.append(i['name'])
@@ -110,8 +134,17 @@ def examine_wiki(url):
     # Make api call to get pages data
     # this should prob make several api calls and parse them, not pass results
     myswiki = PBWiki(url)
+    # get files and store
+    files_json = myswiki.get_files(url)
+    files_dict = parse_files(files_json)
+    print files_dict
+    # get_pages and store
     pages_json = myswiki.get_pages(url)
     page_dict = parse_pages(pages_json)
+    # get_times and store
+    times_json = myswiki.get_times(url)
+    times_dict = parse_times(times_json)
+    print times_dict
     return page_dict
 
 def get_wikilist():
