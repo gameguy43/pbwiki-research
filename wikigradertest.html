@@ -3,7 +3,24 @@
 <!-- Except for Steven Levithan's date format library, under MIT license, and marked as such -->
 <head>
 <style type="text/css">
-    #top_bar {
+    #results-box {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #456724;
+    }
+    #results {
+        clear: both;
+        width: 100%;
+        border: solid #ccc;
+        border-width: 1px 0px 0px 0px;
+        overflow: auto;
+        margin: 0;
+        padding: 0;
+        background-color: #fff;
+       height: 100%;
+    }
+    /*#top_bar {
         position: fixed;
         top: 0px;
         left: 0px;
@@ -39,6 +56,7 @@
     #get_revs {
         margin-top: 10px;
     }
+    */
 
 
 </style>
@@ -56,10 +74,15 @@ var current_page_version_key = 0;
 $(function(){
     $("#page_list").change(function(){
         update_current_page();
+        current_page_version_key = 0;
+        update_next_prev_buttons();
+        update_location_reporting()
+        load_revision();
     });
     wiki_url = 'http://basically.pbworks.com/';
 	$("#after").datepicker();
     update_next_prev_buttons();
+    window.onresize = function() { resize_results(); };
 });
 
 function set_wiki(){
@@ -117,7 +140,7 @@ function update_current_page(){
 function load_revision(){
     d = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
     new_url = current_wiki_url + '/' + current_page + "." + d.format("UTC:yyyy-mm-dd-HH-MM-ss");
-    $("#lower")[0].src = new_url;
+    $("#results")[0].src = new_url;
 }
 
 function prev_rev() {
@@ -166,6 +189,24 @@ function update_page_menu(change_dict) {
         pages.appendChild(option);
     }
 }
+
+function resize_results() {
+    var results = id('results');
+    var height = 0;
+    var heightMinus = 500;
+
+    // get height of window
+    if (window.innerHeight) {
+        height = window.innerHeight - 18;
+    } else if (document.documentElement && document.documentElement.clientHeight) {
+        height = document.documentElement.clientHeight;
+        heightMinus = 187;
+    } else if (document.body && document.body.clientHeight) {
+        height = document.body.clientHeight;
+    }
+    results.style.height = Math.round(height - heightMinus) + "px";
+}
+
 
 /*
  * Date Format 1.2.3
@@ -312,12 +353,13 @@ Date.prototype.format = function (mask, utc) {
                 </span>
                 <input type="button" value="Prev rev" onClick="prev_rev()" id="prev_button"/>
                 <input type="button" value="Next rev" onClick="next_rev()" id="next_button"/>
-                <input type="button" value="Change from prev" onClick="diff()"/>
+                <input type="button" value="Change from prev" onClick="diff_against_prev()"/>
             </form>
         </p>
     </div>
-    <iframe id="upper" width="100%" height="60px" style="border:none"></iframe>
-    <iframe id="lower" width="100%" height="100%" style="border:none"></iframe>
+    <div id="results-box">
+      <iframe src="" id="results" name="results" frameborder="0" border="0"><p>THIS WONT WORK WITHOUT IFRAMES</p></iframe>
+    </div>
 
 </body>
 </html>
