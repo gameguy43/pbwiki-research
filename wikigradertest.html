@@ -20,7 +20,8 @@
         background-color: #fff;
        height: 100%;
     }
-    /*#top_bar {
+    /*
+    #top_bar {
         position: fixed;
         top: 0px;
         left: 0px;
@@ -69,8 +70,9 @@
 //run after dom load
 var current_wiki_url = 'http://basically.pbworks.com/';
 var current_page = '';
-var current_wki_sorted_versions = {};
+var current_wiki_sorted_versions = {};
 var current_page_version_key = 0;
+var current_wiki_earliest_edit_timestamp = 9999999999999;
 $(function(){
     $("#page_list").change(function(){
         update_current_page();
@@ -101,6 +103,48 @@ function set_wiki(){
         update_location_reporting()
         load_revision();
     });
+}
+
+function sort_revisions(list_of_changes) {
+    var change_dict = {};
+    current_wiki_earliest_edit_timestamp = list_of_changes[0].time;
+    for(i = 0; i < list_of_changes.length; i++)
+    {
+        next_page = list_of_changes[i].title
+        if(change_dict[next_page]) {
+            change_dict[next_page].push(list_of_changes[i].time);
+        } else {
+            change_dict[next_page] = new Array(list_of_changes[i].time);
+        }
+        if(list_of_changes[i].time < current_wiki_earliest_edit_timestamp){
+            current_wiki_earliest_edit_timestamp = list_of_changes[i].time;
+        }
+    }
+    d = new Date(parseInt(current_wiki_earliest_edit_timestamp + "000"));
+    current_wiki_earliest_edit_datestr = d.format("UTC:yyyy-mm-dd-HH-MM-ss");
+    return change_dict;
+}
+
+function load_revision(){
+    d = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
+    new_url = current_wiki_url + '/' + current_page + "." + d.format("UTC:yyyy-mm-dd-HH-MM-ss");
+    $("#results")[0].src = new_url;
+}
+
+function days_since(){
+    var input = $('#since')[0].value;
+    var input_in_days = input *60*60*24;
+    var ceiling = current_wiki_earliest_edit_timestamp + input_in_days;
+    var most_recent_revision_date = current_wiki_sorted_versions[current_page][0];
+    var iterations =  current_wiki_sorted_versions[current_page].length;
+    for(i = 0; i < iterations; i++){
+        if(current_wiki_sorted_versions[current_page][i] > most_recent_revision_date && current_wiki_sorted_versions[current_page][i] < ceiling){
+            current_page_version_key = i;
+        }
+    }
+    update_next_prev_buttons();
+    update_location_reporting()
+    load_revision();
 }
 
 function diff_against_prev(){
@@ -137,11 +181,6 @@ function update_current_page(){
     }
 }
 
-function load_revision(){
-    d = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
-    new_url = current_wiki_url + '/' + current_page + "." + d.format("UTC:yyyy-mm-dd-HH-MM-ss");
-    $("#results")[0].src = new_url;
-}
 
 function prev_rev() {
     current_page_version_key -= 1;
@@ -157,20 +196,6 @@ function next_rev() {
     load_revision()
 }
 
-function sort_revisions(list_of_changes) {
-    var change_dict = {};
-
-    for(i = 0; i < list_of_changes.length; i++)
-    {
-        next_page = list_of_changes[i].title
-        if(change_dict[next_page]) {
-            change_dict[next_page].push(list_of_changes[i].time);
-        } else {
-            change_dict[next_page] = new Array(list_of_changes[i].time);
-        }
-    }
-    return change_dict;
-}
 
 function update_location_reporting() {
     $('#revision_number').html(current_page_version_key+1);
@@ -342,7 +367,7 @@ Date.prototype.format = function (mask, utc) {
         <p class="info_text">       
             <form id="get_revs" name="get_revs">
                 Wiki domain:<input type="text" name="wiki_url" size="30"/>
-                From: <input type="text" id="after" name="after"/>
+                <!--From: <input type="text" id="after" name="after"/> -->
                 <input type="button" value="Get history" onClick="set_wiki()"/>
                 <select id="page_list"/>
                     <option value="empty">(page list currently empty)</option>
@@ -353,7 +378,9 @@ Date.prototype.format = function (mask, utc) {
                 </span>
                 <input type="button" value="Prev rev" onClick="prev_rev()" id="prev_button"/>
                 <input type="button" value="Next rev" onClick="next_rev()" id="next_button"/>
-                <input type="button" value="Change from prev" onClick="diff_against_prev()"/>
+                Days since creation: <input type="text" id="since" name="since"/>
+                <input type="button" value="Go" onClick="days_since()"/>
+                <input type="button" value="difference from prev" onClick="diff_against_prev()"/>
             </form>
         </p>
     </div>
