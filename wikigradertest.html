@@ -80,11 +80,13 @@ var current_wiki_sorted_versions_unfiltered = {};
 var current_wiki_sorted_versions = {};
 var current_page_version_key = 0;
 
-//for allowing you to jump to wiki page as it appeared X days after wiki creation
+//for allowing you to filter your view to show wiki as it appeared X days after creation
 var current_wiki_earliest_edit_timestamp = 9999999999999;
 var current_wiki_earliest_edit_datestr = '';
 //current_wiki_earliest_edit_timestamp + days_since (in seconds) = 
 var current_wiki_days_since_ceiling_timestamp = 99999999999999999999999;
+
+var in_diff_mode = false;
 
 var debugmode = true;
 //var debugmode = false;
@@ -208,9 +210,9 @@ function load_days_since(){
         alert("this page hadnt been created yet! (i'm telling you this because you've entered a number of days since wiki creation for which you'd like to see this page.  i did my best to make that happen, but it looks like this page hadn't even been created at that point in time.)");
     }
     else{
-    update_next_prev_buttons();
-    update_location_reporting()
-    load_revision();
+        update_next_prev_buttons();
+        update_location_reporting()
+        load_revision();
     }
 }
 
@@ -228,11 +230,20 @@ function days_since(){
     }
 }
 
-function diff_against_prev(){
-    d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key-1] + "000"));
-    d2 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
-    new_url = current_wiki_url + '/sdiff.php?first=' + current_page + "." + d1.format("UTC:yyyy-mm-dd-HH-MM-ss") + '&second=' + current_page + "." + d2.format("UTC:yyyy-mm-dd-HH-MM-ss");
-    $("#results")[0].src = new_url;
+function diff_click(){
+    if(!in_diff_mode){
+        d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key-1] + "000"));
+        d2 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
+        new_url = current_wiki_url + '/sdiff.php?first=' + current_page + "." + d1.format("UTC:yyyy-mm-dd-HH-MM-ss") + '&second=' + current_page + "." + d2.format("UTC:yyyy-mm-dd-HH-MM-ss");
+        $("#results")[0].src = new_url;
+        in_diff_mode = true;
+        $("#diff_button")[0].value = 'back to page view';
+    }
+    else{
+        load_revision();
+        in_diff_mode = false;
+        $("#diff_button")[0].value = 'changes since prev';
+    }
 }
 
 function update_next_prev_buttons(){
@@ -300,7 +311,7 @@ function update_page_menu(change_dict) {
 }
 
 function resize_results() {
-    var results = id('results');
+    var results = $('#results')[0];
     var height = 0;
     var heightMinus = 500;
 
@@ -485,7 +496,7 @@ Date.prototype.format = function (mask, utc) {
                 <!--Days since wiki creation: <input type="text" id="since" name="since"/>
                 <input type="button" value="Go" onClick="days_since()"/>
                 -->
-                <input type="button" value="difference from prev" onClick="diff_against_prev()"/>
+                <input type="button" id="diff_button" value="difference from prev" onClick="diff_click()"/>
             </form>
         </p>
     </div>
