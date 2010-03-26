@@ -12,8 +12,8 @@ Milestone 1 QualBar:
     - supernext
     - pages dropdown
  -  functions: view N days from origin
-    - find creationdate
-    - given N days from origin, return revision for page as of date
+    + find creationdate
+    + given N days from origin, return revision for page as of date
     - dropdown for 1, 5, 30, 400, &etc N days from origin
 
 Milestone 1 PyWorks:

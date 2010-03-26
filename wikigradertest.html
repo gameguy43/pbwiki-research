@@ -76,6 +76,7 @@
 var current_wiki_url = 'http://basically.pbworks.com';
 //http://andrewscad.pbworks.com
 var current_page = ''; //name of current page
+var current_wiki_sorted_versions_unfiltered = {};
 var current_wiki_sorted_versions = {};
 var current_page_version_key = 0;
 
@@ -86,9 +87,13 @@ var current_wiki_earliest_edit_datestr = '';
 var current_wiki_days_since_ceiling_timestamp = 99999999999999999999999;
 
 var debugmode = true;
+//var debugmode = false;
 
 //run after dom load
 $(function(){
+    $("#filter_by_days_since").change(function(){
+        restrict_by_days_since();
+    });
     $("#page_list").change(function(){
         update_current_page();
         current_page_version_key = 0;
@@ -113,7 +118,8 @@ function set_wiki(){
     //url = current_wiki_url + '/api_v2/?op=GetChanges&_type=jsontext&reverse=false';
     url = 'proxy.php?url=' + current_wiki_url + '/api_v2/?op=GetChanges&_type=jsontext';
     $.getJSON(url, function(data) {
-        current_wiki_sorted_versions = sort_revisions(data.changes);
+        current_wiki_sorted_versions_unfiltered = sort_revisions(data.changes);
+        current_wiki_sorted_versions = current_wiki_sorted_versions_unfiltered
         //temporarily disable page_menu onchange handler
         temporarily_disabled_page_menu_handler = $("#page_list").change;
         $("#page_list").change(function(){});
@@ -147,12 +153,39 @@ function sort_revisions(list_of_changes) {
     return change_dict;
 }
 
+function filter_revisions(ceiling_timestamp){
+    current_wiki_sorted_versions = {};
+    for(var i in current_wiki_sorted_versions_unfiltered){
+        for(var j in current_wiki_sorted_versions_unfiltered[i]){
+            if(current_wiki_sorted_versions_unfiltered[i][j] <= ceiling_timestamp){
+                if(!current_wiki_sorted_versions[i]){
+                    current_wiki_sorted_versions[i] = [];
+                }
+                current_wiki_sorted_versions[i].push(current_wiki_sorted_versions_unfiltered[i][j]);
+            }
+        }
+    }
+}
+
+function restrict_by_days_since(){
+    calculate_days_since();
+    filter_revisions(current_wiki_days_since_ceiling_timestamp);
+    current_page_version_key = 0;
+    update_page_menu(current_wiki_sorted_versions);
+    update_current_page();
+    update_next_prev_buttons();
+    update_location_reporting();
+    update_wiki_age_reporting();
+    load_revision();
+}
+
 function load_revision(){
     d = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
     new_url = current_wiki_url + '/' + current_page + "." + d.format("UTC:yyyy-mm-dd-HH-MM-ss");
     $("#results")[0].src = new_url;
 }
 
+//TODO: this is probably deprecated now... sadly...
 function load_days_since(){
     //start with the oldest revision of this page
     var most_recent_revision_date = current_wiki_sorted_versions[current_page][current_wiki_sorted_versions[current_page].length-1];
@@ -182,7 +215,8 @@ function load_days_since(){
 }
 
 function calculate_days_since(){
-    var input = $('#since')[0].value;
+    //var input = $('#since')[0].value;
+    var input = $('#filter_by_days_since')[0].value;
     var input_in_seconds = Math.floor((input*60*60*24));
     current_wiki_days_since_ceiling_timestamp = parseInt(current_wiki_earliest_edit_timestamp) + parseInt(input_in_seconds);
 }
@@ -418,28 +452,39 @@ Date.prototype.format = function (mask, utc) {
             <form id="get_revs" name="get_revs">
                 Wiki domain:<input type="text" name="wiki_url" size="30"/>
                 <!--From: <input type="text" id="after" name="after"/> -->
-                <input type="button" value="Get history" onClick="set_wiki()"/>
+                <input type="button" value="Set wiki" onClick="set_wiki()"/>
                 page: 
                 <select id="page_list"/>
                     <option value="empty">(page list currently empty)</option>
                 </select>
                 <br />
-                <span id="rev_list">
-                    revision 
-                <span id="revision_number">X</span>/<span id="total_revision_count">X</span>
-                (where 1 is the most recent)
-                </span>
+                filter by days from wiki creation:
+                <select id="filter_by_days_since"/>
+                    <option value="99999">(unfiltered)</option>
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="7">7</option>
+                    <option value="30">30</option>
+                    <option value="100">100</option>
+                    <option value="400">400</option>
+                </select>
                 <span id="wiki_age">
                     This wiki was created
                 <span id="wiki_age_timestamp">XXXX-XX-XX-XX-XX-XX</span>
-                .
-                </span>
                 <br />
+                <span id="rev_list">
+                    revision 
+                <span id="revision_number">X</span>/<span id="total_revision_count">X</span>
+                <span style="font-size:.8em;">(where 1 is the most recent)</span>
+                </span>
+                </span>
+                |
                 navigation:
                 <input type="button" value="< Newer" onClick="prev_rev()" id="prev_button"/>
                 <input type="button" value="Older >" onClick="next_rev()" id="next_button"/>
-                Days since wiki creation: <input type="text" id="since" name="since"/>
+                <!--Days since wiki creation: <input type="text" id="since" name="since"/>
                 <input type="button" value="Go" onClick="days_since()"/>
+                -->
                 <input type="button" value="difference from prev" onClick="diff_against_prev()"/>
             </form>
         </p>
