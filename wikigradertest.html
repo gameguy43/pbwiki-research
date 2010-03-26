@@ -95,9 +95,9 @@ $(function(){
         update_next_prev_buttons();
         update_location_reporting()
         load_revision();
+        days_since();
     });
 	$("#after").datepicker();
-    update_next_prev_buttons();
     window.onresize = function() { resize_results(); };
 });
 
@@ -114,7 +114,11 @@ function set_wiki(){
     url = 'proxy.php?url=' + current_wiki_url + '/api_v2/?op=GetChanges&_type=jsontext';
     $.getJSON(url, function(data) {
         current_wiki_sorted_versions = sort_revisions(data.changes);
+        //temporarily disable page_menu onchange handler
+        temporarily_disabled_page_menu_handler = $("#page_list").change;
+        $("#page_list").change(function(){});
         update_page_menu(current_wiki_sorted_versions);
+        $("#page_list").change(temporarily_disabled_page_menu_handler);
         current_page = $("#page_list")[0].firstChild.firstChild.nodeValue;
         update_next_prev_buttons();
         update_location_reporting();
@@ -149,10 +153,7 @@ function load_revision(){
     $("#results")[0].src = new_url;
 }
 
-function days_since(){
-    var input = $('#since')[0].value;
-    var input_in_seconds = Math.floor((input*60*60*24));
-    current_wiki_days_since_ceiling_timestamp = parseInt(current_wiki_earliest_edit_timestamp) + parseInt(input_in_seconds);
+function load_days_since(){
     //start with the oldest revision of this page
     var most_recent_revision_date = current_wiki_sorted_versions[current_page][current_wiki_sorted_versions[current_page].length-1];
     var iterations =  current_wiki_sorted_versions[current_page].length;
@@ -171,12 +172,25 @@ function days_since(){
         }
     }
     if(!we_confirmed_this_page_was_created_after_the_specified_date){
-        alert('this page hadnt been created yet!');
+        alert("this page hadnt been created yet! (i'm telling you this because you've entered a number of days since wiki creation for which you'd like to see this page.  i did my best to make that happen, but it looks like this page hadn't even been created at that point in time.)");
     }
     else{
     update_next_prev_buttons();
     update_location_reporting()
     load_revision();
+    }
+}
+
+function calculate_days_since(){
+    var input = $('#since')[0].value;
+    var input_in_seconds = Math.floor((input*60*60*24));
+    current_wiki_days_since_ceiling_timestamp = parseInt(current_wiki_earliest_edit_timestamp) + parseInt(input_in_seconds);
+}
+
+function days_since(){
+    if($('#since')[0].value != ''){
+        calculate_days_since();
+        load_days_since();
     }
 }
 
