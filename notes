@@ -1,6 +1,11 @@
 parker's current task:
-    TEST WITH LARGE DATASETS
-        maybe filter out things that aren't pages?
+    filter out pages which have a "." in their names--they are just files
+    remove page revisions which have been wiped from history
+        to duplicate:
+            use wiki: http://criticalnatures.pbworks.com/
+            go to FrontPage
+            notice that it says there are 9 revisions but the page only reports 3 (and nexting just gets you the revision page)
+
 
 
 ToDo

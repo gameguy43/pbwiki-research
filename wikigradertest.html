@@ -4,10 +4,14 @@
 <head>
 <style type="text/css">
     #results-box {
-        height: 100%;
+        /*height: 100%;*/
         margin: 0;
         padding: 0;
         background: #456724;
+    }
+    #results-box {
+        margin: 0;
+        padding: 0;
     }
     #results {
         clear: both;
@@ -18,32 +22,38 @@
         margin: 0;
         padding: 0;
         background-color: #fff;
-       height: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    html{
+        margin: 0;
+        padding: 0;
     }
     body{
         font-size: .8em;
-    }
-    input{
+        margin: 0;
         padding: 0;
     }
-    /*
+    input, select{
+        padding: 0;
+        margin: 0;
+        border: 1px solid;
+    }
     #top_bar {
-        position: fixed;
-        top: 0px;
-        left: 0px;
-        width: 100%;
-        height: 50px;
+        display: block;
+        height: 75px;
         background: orange;
         border-bottom: 1px solid black;
-        float: left;
-        z-index:2;
         font-size: 12px;
         font-weight: normal;
-        font-family: Arial, Verdana, sans-serif;
         text-align: left;
         color: black;
+        padding-left: 10px;
+        padding-top: 5px;
+        overflow: auto;
     }
-
+    /*
     #top_bar p.info_text {
         float: left;
         padding-left: 20px;
@@ -102,10 +112,11 @@ $(function(){
         update_next_prev_buttons();
         update_location_reporting()
         load_revision();
-        days_since();
+        //days_since();
     });
 	$("#after").datepicker();
-    //window.onresize = function() { resize_results(); };
+    window.onresize = function() { resize_results(); };
+    resize_results();
 });
 
 function set_wiki(){
@@ -141,13 +152,15 @@ function sort_revisions(list_of_changes) {
     for(i = 0; i < list_of_changes.length; i++)
     {
         next_page = list_of_changes[i].title
-        if(change_dict[next_page]) {
-            change_dict[next_page].unshift(list_of_changes[i].time);
-        } else {
-            change_dict[next_page] = new Array(list_of_changes[i].time);
-        }
-        if(list_of_changes[i].time < current_wiki_earliest_edit_timestamp){
-            current_wiki_earliest_edit_timestamp = list_of_changes[i].time;
+        if(next_page.indexOf('.') == -1){
+            if(change_dict[next_page]) {
+                change_dict[next_page].unshift(list_of_changes[i].time);
+            } else {
+                change_dict[next_page] = new Array(list_of_changes[i].time);
+            }
+            if(list_of_changes[i].time < current_wiki_earliest_edit_timestamp){
+                current_wiki_earliest_edit_timestamp = list_of_changes[i].time;
+            }
         }
     }
     d = new Date(parseInt(current_wiki_earliest_edit_timestamp + "000"));
@@ -338,14 +351,14 @@ function update_page_menu(change_dict) {
 function resize_results() {
     var results = $('#results')[0];
     var height = 0;
-    var heightMinus = 500;
+    var heightMinus = 85;
 
     // get height of window
     if (window.innerHeight) {
         height = window.innerHeight - 18;
     } else if (document.documentElement && document.documentElement.clientHeight) {
         height = document.documentElement.clientHeight;
-        heightMinus = 187;
+        heightMinus = 75;
     } else if (document.body && document.body.clientHeight) {
         height = document.body.clientHeight;
     }
@@ -484,50 +497,48 @@ Date.prototype.format = function (mask, utc) {
 
 <body>
     <div id="top_bar">
-        <p class="info_text">       
-            <form id="get_revs" name="get_revs">
-                Wiki domain:<input type="text" name="wiki_url" size="30"/>
-                <!--From: <input type="text" id="after" name="after"/> -->
-                <input type="button" value="Set wiki" onClick="set_wiki()"/>
-                page: 
-                <select id="page_list"/>
-                    <option value="empty">(page list currently empty)</option>
-                </select>
-                <br />
-                filter by days from wiki creation:
-                <select id="filter_by_days_since"/>
-                    <option value="99999">(unfiltered)</option>
-                    <option value="0">0</option>
-                    <option value="1">1</option>
-                    <option value="7">7</option>
-                    <option value="30">30</option>
-                    <option value="100">100</option>
-                    <option value="400">400</option>
-                </select>
-                <span id="wiki_age">
-                    This wiki was created
-                <span id="wiki_age_timestamp">XXXX-XX-XX-XX-XX-XX</span>
-                <br />
-                <span id="rev_list">
-                    revision 
-                <span id="revision_number">X</span>/<span id="total_revision_count">X</span>
-                <span style="font-size:.8em;">(1 is the oldest)</span>
-                </span>
-                </span>
-                |
-                navigation:
-                <input type="button" value="< Older" onClick="prev_rev()" id="prev_button"/>
-                <input type="button" value="Newer >" onClick="next_rev()" id="next_button"/>
-                <!--Days since wiki creation: <input type="text" id="since" name="since"/>
-                <input type="button" value="Go" onClick="days_since()"/>
-                -->
-                <input type="button" id="diff_button" value="difference from prev" onClick="diff_click()"/>
-                <input type="button" id="supernext_button" value="SuperNext>>" onClick="supernext()"/>
-            </form>
-        </p>
+    <form id="get_revs" name="get_revs">
+            Wiki domain:<input type="text" name="wiki_url" size="30"/>
+            <!--From: <input type="text" id="after" name="after"/> -->
+            <input type="button" value="Set wiki" onClick="set_wiki()"/>
+            page: 
+            <select id="page_list"/>
+                <option value="empty">(page list currently empty)</option>
+            </select>
+            <br />
+            filter by days from wiki creation:
+            <select id="filter_by_days_since"/>
+                <option value="99999">(unfiltered)</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="7">7</option>
+                <option value="30">30</option>
+                <option value="100">100</option>
+                <option value="400">400</option>
+            </select>
+            <span id="wiki_age">
+                This wiki was created
+            <span id="wiki_age_timestamp">XXXX-XX-XX-XX-XX-XX</span>
+            <br />
+            <span id="rev_list">
+                revision 
+            <span id="revision_number">X</span>/<span id="total_revision_count">X</span>
+            <span style="font-size:.8em;">(1 is the oldest)</span>
+            </span>
+            </span>
+            |
+            navigation:
+            <input type="button" value="< Older" onClick="prev_rev()" id="prev_button"/>
+            <input type="button" value="Newer >" onClick="next_rev()" id="next_button"/>
+            <!--Days since wiki creation: <input type="text" id="since" name="since"/>
+            <input type="button" value="Go" onClick="days_since()"/>
+            -->
+            <input type="button" id="diff_button" value="difference from prev" onClick="diff_click()"/>
+            <input type="button" id="supernext_button" value="SuperNext>>" onClick="supernext()"/>
+        </form>
     </div>
     <div id="results-box">
-      <iframe src="" id="results" name="results" frameborder="0" border="0"><p>THIS WONT WORK WITHOUT IFRAMES</p></iframe>
+        <iframe src="" id="results" name="results" frameborder="0" border="0"><p>THIS WONT WORK WITHOUT IFRAMES</p></iframe>
     </div>
 
 </body>
