@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from pbwiki import *
+from store_wikis import *
 
 ## Collection of json parsers
 # Takes data from pbworks, makes db insertable dicts
@@ -52,24 +53,20 @@ def examine_wiki(url):
     # Makes several api calls about wiki
     # Passes joined dict to be stored
     myswiki = PBWiki(url)
-    # get_files and store
     files_json = myswiki.get_files(url)
     files_dict = parse_files(files_json)
     #print files_dict
-    # get_pages and store
     pages_json = myswiki.get_pages(url)
     pages_dict = parse_pages(pages_json)
     #print page_dict
-    # get_times and store
     times_json = myswiki.get_times(url)
     times_dict = parse_times(times_json)
     #print times_dict
-    # get_page and store
     page_json = myswiki.get_page(url)
     page_dict = parse_page(page_json)
     #print page_dict
-    
-    data_dict = dict(pages_dict.items() + files_dict.items() + times_dict.items() + page_dict.items())
+    name_dict = {'url' : url}
+    data_dict = dict(pages_dict.items() + files_dict.items() + times_dict.items() + page_dict.items() + name_dict.items() )
     return data_dict
 
 def get_wikilist():
@@ -84,11 +81,22 @@ def traverse_wikis():
     # ?? Iterate over wikis and call other bits of api ?
     return wikipages
 
+def store_wiki_dict(dict):
+    i = wikis_table.insert()
+    dict['files_list'] = str(dict['files_list'])
+    dict['pages_list'] = str(dict['pages_list'])
+    i.execute(dict)
+    return 
+
 def glue():
     test_url = 'http://testapi.pbworks.com'
-    wiki_data = examine_wiki(test_url)
-    print wiki_data
-    return wiki_data
+    wiki_list = get_wikilist()
+    for wikiplus in wiki_list:
+        wiki = wikiplus[:-1]
+        wiki_data = examine_wiki(wiki)
+        store_wiki_dict(wiki_data)
+        print wiki + " stored"
+    return wiki_list
     
 if __name__ == '__main__':
     wd = glue()
