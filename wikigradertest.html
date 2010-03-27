@@ -1,7 +1,7 @@
+<html>
 <!-- Original Copyright Brandon Stafford 2010                                                         -->
 <!-- Picked up by Parker Phinney 2010, then probably Seth Woodworth later                             -->
 <!-- Except for Steven Levithan's date format library, under MIT license, and marked as such -->
-<html>
 <head>
 <style type="text/css">
     #results-box { /*height: 100%;*/ margin: 0; padding: 0; background: #456724; }
@@ -17,6 +17,7 @@
 <!-- TODO: use our own copy of jquery -->
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script type="text/javascript" src="http://jquery-ui.googlecode.com/svn/tags/latest/ui/minified/jquery-ui.min.js"></script>
+<script type="text/javascript" src="datefmt.js"></script>
 
 <script type="text/javascript">
 var current_wiki_url = 'http://basically.pbworks.com';
@@ -40,8 +41,8 @@ var current_wiki_days_since_ceiling_timestamp = 99999999999999999999999;
 //whether or not the page that we are currently looking at is a diff (as opposed to a specific page version):
 var in_diff_mode = false;
 
-//var debugmode = true;
-var debugmode = false;
+var debugmode = true;
+//var debugmode = false;
 
 //these things get run after dom load
 $(function(){
@@ -108,9 +109,8 @@ function sort_revisions(list_of_changes) {
     //the below is arbitrary seeding--we're going to iterate and by the end actually have the earliest timestamp in the edit history
     current_wiki_earliest_edit_timestamp = list_of_changes[0].time;
     //loop through all the changes
-    for(i = 0; i < list_of_changes.length; i++)
-    {
-        next_page = list_of_changes[i].title
+    for(i = 0; i < list_of_changes.length; i++){
+        next_page = list_of_changes[i].title;
         //FILTER OUT ANY PAGE NAMES WITH A DOT ('.') in them--they're just files and we probably don't care about them
         if(next_page.indexOf('.') == -1){
             if(change_dict[next_page]) {
@@ -128,7 +128,7 @@ function sort_revisions(list_of_changes) {
         }
     }
     //save our wiki creation date as a string, so we can report it to the humans
-    d = new Date(parseInt(current_wiki_earliest_edit_timestamp + "000"));
+    var d = new Date(parseInt(current_wiki_earliest_edit_timestamp + "000"));
     current_wiki_earliest_edit_datestr = d.format("UTC:yyyy-mm-dd-HH-MM-ss");
     return change_dict;
 }
