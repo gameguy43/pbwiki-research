@@ -88,8 +88,8 @@ var current_wiki_days_since_ceiling_timestamp = 99999999999999999999999;
 
 var in_diff_mode = false;
 
-var debugmode = true;
-//var debugmode = false;
+//var debugmode = true;
+var debugmode = false;
 
 //run after dom load
 $(function(){
@@ -247,8 +247,8 @@ function diff_click(){
     }
     else{
         load_revision();
-        update_location_reporting()
     }
+    update_location_reporting()
 }
 
 function supernext(){
