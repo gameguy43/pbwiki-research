@@ -23,6 +23,8 @@ def parse_files(json):
         'files_count' : json['_total_count'],
         'files_list' : json['files'],
     }
+    # cast list as string, remove this when needed
+    files_dict['files_list'] = str(files_dict['files_list'])
     return files_dict
 
 def parse_times(json):
@@ -41,32 +43,44 @@ def parse_pages(json):
     pages = json['pages']
     pages_list = []
     for i in pages:
+        #print i['name']
         pages_list.append(i['name'])
-    wiki_dict = { 
+    pages_dict = { 
         'pages_count': json['_total_count'], # number of pages in wiki
         'pages_list': pages_list # make sure list is not problematic
     }
-    return wiki_dict
+    # cast list as string, remove this when needed
+    pages_dict['pages_list'] = str(pages_dict['pages_list'])
+    return pages_dict
 
 def examine_wiki(url):
     # Controller for PBWiki class
     # Makes several api calls about wiki
     # Passes joined dict to be stored
     myswiki = PBWiki(url)
-    files_json = myswiki.get_files(url)
-    files_dict = parse_files(files_json)
-    #print files_dict
-    pages_json = myswiki.get_pages(url)
-    pages_dict = parse_pages(pages_json)
-    #print page_dict
-    times_json = myswiki.get_times(url)
-    times_dict = parse_times(times_json)
-    #print times_dict
-    page_json = myswiki.get_page(url)
-    page_dict = parse_page(page_json)
-    #print page_dict
-    name_dict = {'url' : url}
-    data_dict = dict(pages_dict.items() + files_dict.items() + times_dict.items() + page_dict.items() + name_dict.items() )
+    try:
+        files_json = myswiki.get_files(url)
+        files_dict = parse_files(files_json)
+        print "files_dict stored"
+        pages_json = myswiki.get_pages(url)
+        pages_dict = parse_pages(pages_json)
+        print "page_dict stored"
+        times_json = myswiki.get_times(url)
+        times_dict = parse_times(times_json)
+        print "times_dict"
+        page_json = myswiki.get_page(url)
+        page_dict = parse_page(page_json)
+        print "page_dict"
+        #name_dict = {"url" : url, "works" : 1}
+        data_dict = dict(pages_dict.items() + files_dict.items() + times_dict.items() + page_dict.items() )
+        data_dict['url'] = url
+        data_dict['works'] = 1
+    except KeyboardInterrupt:
+        sys.exit(0)
+        self.queue.task_done()
+    except:
+        print "Oops, that url doesn't work: " + url
+        data_dict = {'url' : url, 'works' : '0'}
     return data_dict
 
 def get_wikilist():
@@ -83,8 +97,6 @@ def traverse_wikis():
 
 def store_wiki_dict(dict):
     i = wikis_table.insert()
-    dict['files_list'] = str(dict['files_list'])
-    dict['pages_list'] = str(dict['pages_list'])
     i.execute(dict)
     return 
 

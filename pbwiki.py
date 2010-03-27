@@ -46,7 +46,7 @@ class PBWiki(object):
       kwargs['_type'] = 'jsontext'
       argstr = '/'.join(["%s/%s" % (k,v) for k, v in kwargs.iteritems()])
       call_url = '%s/api_v2/op/%s/%s' % (self.url, oper, argstr)
-      print call_url
+      #print call_url
       # Fetch text and strip off first and last lines, which are comment tags
       doc = urlopen(call_url)
       json = '\n'.join(doc.read().split('\n')[1:-2])
