@@ -61,20 +61,21 @@ def examine_wiki(url):
     try:
         files_json = myswiki.get_files(url)
         files_dict = parse_files(files_json)
-        print "files_dict stored"
+        #print "files_dict stored"
         pages_json = myswiki.get_pages(url)
         pages_dict = parse_pages(pages_json)
-        print "page_dict stored"
+        #print "page_dict stored"
         times_json = myswiki.get_times(url)
         times_dict = parse_times(times_json)
-        print "times_dict"
+        #print "times_dict"
         page_json = myswiki.get_page(url)
         page_dict = parse_page(page_json)
-        print "page_dict"
+        #print "page_dict"
         #name_dict = {"url" : url, "works" : 1}
         data_dict = dict(pages_dict.items() + files_dict.items() + times_dict.items() + page_dict.items() )
         data_dict['url'] = url
         data_dict['works'] = 1
+        print url + " seems good"
     except KeyboardInterrupt:
         sys.exit(0)
         self.queue.task_done()
