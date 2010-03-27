@@ -1,120 +1,98 @@
 <html>
-<!-- Copyright Brandon Stafford 2010                                                         -->
+<!-- Original Copyright Brandon Stafford 2010                                                         -->
+<!-- Picked up by Parker Phinney 2010, then probably Seth Woodworth later                             -->
 <!-- Except for Steven Levithan's date format library, under MIT license, and marked as such -->
 <head>
 <style type="text/css">
-    #results-box {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        background: #456724;
-    }
-    #results {
-        clear: both;
-        width: 100%;
-        border: solid #ccc;
-        border-width: 1px 0px 0px 0px;
-        overflow: auto;
-        margin: 0;
-        padding: 0;
-        background-color: #fff;
-       height: 100%;
-    }
-    body{
-        font-size: .8em;
-    }
-    input{
-        padding: 0;
-    }
-    /*
-    #top_bar {
-        position: fixed;
-        top: 0px;
-        left: 0px;
-        width: 100%;
-        height: 50px;
-        background: orange;
-        border-bottom: 1px solid black;
-        float: left;
-        z-index:2;
-        font-size: 12px;
-        font-weight: normal;
-        font-family: Arial, Verdana, sans-serif;
-        text-align: left;
-        color: black;
-    }
-
-    #top_bar p.info_text {
-        float: left;
-        padding-left: 20px;
-        padding-right: 20px;
-        margin-left: 15px;
-        margin-top: 7px;
-    }
-
-    #top_bar p.rev_list {
-        float: left;
-        padding-left: 20px;
-        padding-right: 20px;
-        margin-left: 35px;
-        margin-top: 0px;
-    }
-
-    #get_revs {
-        margin-top: 10px;
-    }
-    */
-
-
+    #results-box { /*height: 100%;*/ margin: 0; padding: 0; background: #456724; }
+    #results-box { margin: 0; padding: 0; }
+    #results { clear: both; width: 100%; border: solid #ccc; border-width: 1px 0px 0px 0px; overflow: auto; margin: 0; padding: 0; background-color: #fff; height: 100%; margin: 0; padding: 0; }
+    html{ margin: 0; padding: 0; }
+    body{ font-size: .8em; margin: 0; padding: 0; }
+    input, select{ padding: 0; margin: 0; border: 1px solid; }
+    #top_bar { display: block; height: 75px; background: orange; border-bottom: 1px solid black; font-size: 12px; font-weight: normal; text-align: left; color: black; padding-left: 10px; padding-top: 5px; overflow: auto; }
 </style>
 
 <link type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/ui-darkness/jquery-ui.css" rel="stylesheet" />	
+<!-- TODO: use our own copy of jquery -->
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script type="text/javascript" src="http://jquery-ui.googlecode.com/svn/tags/latest/ui/minified/jquery-ui.min.js"></script>
+<script type="text/javascript" src="datefmt.js"></script>
 
 <script type="text/javascript">
 var current_wiki_url = 'http://basically.pbworks.com';
-//http://andrewscad.pbworks.com
-var current_page = ''; //name of current page
+//another possible example wiki: http://andrewscad.pbworks.com
+var current_page = ''; //name of current page, string
 var current_wiki_sorted_versions = {};
-var current_page_version_key = 0;
+//the above is a dict/array mapping page names to lists of revision timestamps. for example:
+//current_wiki_sorted_versions[current_page] would be something like:
+//["1213360395", "1213360766", "1213361080"]
+//this is the index of current_wiki_sorted_versions[current_page] at-which we can find the timestamp for the page version which we are currently looking at:
+var current_page_version_key = 0; 
+//we're going to filter current_wiki_sorted_versions if they enter a ceiling number of days since wiki creation, so we keep the original:
+var current_wiki_sorted_versions_unfiltered = {};
 
-//for allowing you to jump to wiki page as it appeared X days after wiki creation
+//for allowing you to filter your view to show wiki as it appeared X days after creation
 var current_wiki_earliest_edit_timestamp = 9999999999999;
 var current_wiki_earliest_edit_datestr = '';
-//current_wiki_earliest_edit_timestamp + days_since (in seconds) = 
+//this is is the current_wiki_earliest_edit_timestamp + days_since (in seconds): 
 var current_wiki_days_since_ceiling_timestamp = 99999999999999999999999;
 
-var debugmode = true;
+//whether or not the page that we are currently looking at is a diff (as opposed to a specific page version):
+var in_diff_mode = false;
 
-//run after dom load
+//var debugmode = true;
+var debugmode = false;
+
+//these things get run after dom load
 $(function(){
+    //bind some handlers
+    $("#filter_by_days_since").change(function(){
+        restrict_by_days_since();
+    });
     $("#page_list").change(function(){
         update_current_page();
         current_page_version_key = 0;
         update_next_prev_buttons();
         update_location_reporting()
         load_revision();
+        //days_since();
     });
-	$("#after").datepicker();
-    update_next_prev_buttons();
+    //for resizing the results iframe to take up all (read: most) of the window
     window.onresize = function() { resize_results(); };
+    resize_results();
+
+    //we're not using this for now:
+	//$("#after").datepicker();
 });
 
+//this gets fired when you click "Set wiki" (which you'll want to do after entering a wiki url)
 function set_wiki(){
     var revisions = {};
-    var req = new XMLHttpRequest();
+    //grab the url entered in the text field
     current_wiki_url = document.get_revs.wiki_url.value;
     //$.get(current_wiki_url);
-    if(debugmode){
-        current_wiki_url = 'http://basically.pbworks.com/';
-    }
-
+    //for faster debugging:
+    if(debugmode){ current_wiki_url = 'http://basically.pbworks.com/'; }
+    //we were doing the below until we realized that it doesnt seem to work--due to pbwiki cross-browser security something or other?
     //url = current_wiki_url + '/api_v2/?op=GetChanges&_type=jsontext&reverse=false';
+    //easy fix: use a server-side proxy
     url = 'proxy.php?url=' + current_wiki_url + '/api_v2/?op=GetChanges&_type=jsontext';
+    //this is the ajaxey part. 'data' is what we get back from the API
     $.getJSON(url, function(data) {
-        current_wiki_sorted_versions = sort_revisions(data.changes);
+        //this stuff happens as long as our ajaxey api call didnt fail (like 404 or something)
+        //reformat their revision history to only include the stuff that we want, and in the format that we want
+        //ALSO: this function sneakily figures out when the wiki was created and stores the answer in a global
+        current_wiki_sorted_versions_unfiltered = sort_revisions(data.changes);
+        //keep a copy of this data in _unfiltered, so that we still have it after applying a filter
+        //(like "only show stuff from X days after wiki creation")
+        current_wiki_sorted_versions = current_wiki_sorted_versions_unfiltered
+        //temporarily disable page_menu onchange handler
+        temporarily_disabled_page_menu_handler = $("#page_list").change;
+        $("#page_list").change(function(){});
         update_page_menu(current_wiki_sorted_versions);
+        $("#page_list").change(temporarily_disabled_page_menu_handler);
+        //make the current page be the first page in our list--this is an arbitrary choice
         current_page = $("#page_list")[0].firstChild.firstChild.nodeValue;
         update_next_prev_buttons();
         update_location_reporting();
@@ -123,36 +101,98 @@ function set_wiki(){
     });
 }
 
+//reformat their revision history to only include the stuff that we want, and in the format that we want
+//ALSO: this function sneakily figures out when the wiki was created and stores the answer in a global
+//NOTE: all the rest of our functions like this just alter globals--maybe this one should just save its answer instead of returning it?
 function sort_revisions(list_of_changes) {
     var change_dict = {};
+    //the below is arbitrary seeding--we're going to iterate and by the end actually have the earliest timestamp in the edit history
     current_wiki_earliest_edit_timestamp = list_of_changes[0].time;
-    for(i = 0; i < list_of_changes.length; i++)
-    {
-        next_page = list_of_changes[i].title
-        if(change_dict[next_page]) {
-            change_dict[next_page].push(list_of_changes[i].time);
-        } else {
-            change_dict[next_page] = new Array(list_of_changes[i].time);
-        }
-        if(list_of_changes[i].time < current_wiki_earliest_edit_timestamp){
-            current_wiki_earliest_edit_timestamp = list_of_changes[i].time;
+    //loop through all the changes
+    for(i = 0; i < list_of_changes.length; i++){
+        next_page = list_of_changes[i].title;
+        //FILTER OUT ANY PAGE NAMES WITH A DOT ('.') in them--they're just files and we probably don't care about them
+        if(next_page.indexOf('.') == -1){
+            if(change_dict[next_page]) {
+                //'unshift' means 'prepend' -- this way the oldest version of the page is the first item in our list
+                change_dict[next_page].unshift(list_of_changes[i].time);
+            //make sure that we create the array key if we don't already have it
+            } else {
+                change_dict[next_page] = new Array(list_of_changes[i].time);
+            }
+            //if this is our earliest timestamp yet, make a note of it!
+            //at the end of this loop, we'll have the timestamp for the wiki creation date
+            if(list_of_changes[i].time < current_wiki_earliest_edit_timestamp){
+                current_wiki_earliest_edit_timestamp = list_of_changes[i].time;
+            }
         }
     }
-    d = new Date(parseInt(current_wiki_earliest_edit_timestamp + "000"));
+    //save our wiki creation date as a string, so we can report it to the humans
+    var d = new Date(parseInt(current_wiki_earliest_edit_timestamp + "000"));
     current_wiki_earliest_edit_datestr = d.format("UTC:yyyy-mm-dd-HH-MM-ss");
     return change_dict;
 }
 
-function load_revision(){
-    d = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
-    new_url = current_wiki_url + '/' + current_page + "." + d.format("UTC:yyyy-mm-dd-HH-MM-ss");
-    $("#results")[0].src = new_url;
+//filter out all the revisions above a certain timestamp ceiling (specified by the arg)
+function filter_revisions(ceiling_timestamp){
+    current_wiki_sorted_versions = {};
+    //loop through all of our revision timestamps
+    for(var i in current_wiki_sorted_versions_unfiltered){
+        for(var j in current_wiki_sorted_versions_unfiltered[i]){
+            //only include the things that fit under our ceiling date (as specified in the dropdown)
+            if(current_wiki_sorted_versions_unfiltered[i][j] <= ceiling_timestamp){
+                //(create the index in our array, if it doesn't exist yet)
+                if(!current_wiki_sorted_versions[i]){
+                    current_wiki_sorted_versions[i] = [];
+                }
+                current_wiki_sorted_versions[i].push(current_wiki_sorted_versions_unfiltered[i][j]);
+            }
+        }
+    }
 }
 
-function days_since(){
-    var input = $('#since')[0].value;
+//this gets fired when you choose a ceiling number of days since creation from the drop-down
+function restrict_by_days_since(){
+    //set up the right globals (turn the number of days in to a timestamp)
+    calculate_days_since();
+    //do the actual filtering
+    filter_revisions(current_wiki_days_since_ceiling_timestamp);
+    //recet the page version so that we're sure to be under our threshold
+    current_page_version_key = 0;
+    //update the list of pages
+    //we're careful to do this before running update_current_page
+    //(this way we can be sure that the page they end up looking at is one that existed before the ceiling date)
+    update_page_menu(current_wiki_sorted_versions);
+    update_current_page();
+    update_next_prev_buttons();
+    update_location_reporting();
+    update_wiki_age_reporting();
+    load_revision();
+}
+
+//set the right global for our ceiling timestamp, based on the number of days selected in the form
+function calculate_days_since(){
+    var input = $('#filter_by_days_since')[0].value;
     var input_in_seconds = Math.floor((input*60*60*24));
     current_wiki_days_since_ceiling_timestamp = parseInt(current_wiki_earliest_edit_timestamp) + parseInt(input_in_seconds);
+}
+
+//actually load a page in the frame--based on the globals that we've been carefully keeping track of
+function load_revision(){
+    //set up the url
+    d = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
+    new_url = current_wiki_url + '/' + current_page + "." + d.format("UTC:yyyy-mm-dd-HH-MM-ss");
+    //take us there in the frame
+    $("#results")[0].src = new_url;
+    //assert that we're not in diff mode, and adjust the button accordingly
+    in_diff_mode = false;
+    $("#diff_button")[0].value = 'changes since prev';
+}
+
+// TODO: this is probably deprecated now... sadly...
+// but maybe it'll be useful for the teacher view?
+/*
+function load_days_since(){
     //start with the oldest revision of this page
     var most_recent_revision_date = current_wiki_sorted_versions[current_page][current_wiki_sorted_versions[current_page].length-1];
     var iterations =  current_wiki_sorted_versions[current_page].length;
@@ -171,22 +211,59 @@ function days_since(){
         }
     }
     if(!we_confirmed_this_page_was_created_after_the_specified_date){
-        alert('this page hadnt been created yet!');
+        alert("this page hadnt been created yet! (i'm telling you this because you've entered a number of days since wiki creation for which you'd like to see this page.  i did my best to make that happen, but it looks like this page hadn't even been created at that point in time.)");
     }
     else{
-    update_next_prev_buttons();
-    update_location_reporting()
-    load_revision();
+        update_next_prev_buttons();
+        update_location_reporting()
+        load_revision();
     }
 }
 
-function diff_against_prev(){
-    d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key+1] + "000"));
-    d2 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
-    new_url = current_wiki_url + '/sdiff.php?first=' + current_page + "." + d1.format("UTC:yyyy-mm-dd-HH-MM-ss") + '&second=' + current_page + "." + d2.format("UTC:yyyy-mm-dd-HH-MM-ss");
-    $("#results")[0].src = new_url;
+function days_since(){
+    if($('#since')[0].value != ''){
+        calculate_days_since();
+        load_days_since();
+    }
+}
+*/
+
+//fired when they click the diff button--which turns diff mode on or off
+function diff_click(){
+    if(!in_diff_mode){
+        if(current_page_version_key == 0){
+            alert("nothing to diff against--you're on the oldest revision of this page");
+            return false;
+        }
+        d1 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key-1] + "000"));
+        d2 = new Date(parseInt(current_wiki_sorted_versions[current_page][current_page_version_key] + "000"));
+        //load the diff view in the iframe
+        new_url = current_wiki_url + '/sdiff.php?first=' + current_page + "." + d1.format("UTC:yyyy-mm-dd-HH-MM-ss") + '&second=' + current_page + "." + d2.format("UTC:yyyy-mm-dd-HH-MM-ss");
+        $("#results")[0].src = new_url;
+        in_diff_mode = true;
+        $("#diff_button")[0].value = 'back to page view';
+    }
+    else{
+        load_revision();
+    }
+    update_location_reporting()
 }
 
+//fired when they click supernext
+function supernext(){
+    //if you're on the first page or you're already looking at a diff, go to the next revision
+    if(in_diff_mode || current_page_version_key == 0){
+        next_rev();
+    }
+    //otherwise, go in to diff mode
+    else{
+        diff_click();
+    }
+    update_location_reporting();
+
+}
+
+//show/hide the next/prev buttons as appropriate
 function update_next_prev_buttons(){
     var next_button = $('#next_button');
     var prev_button = $('#prev_button');
@@ -206,38 +283,17 @@ function update_next_prev_buttons(){
     }
 }
 
+// stupid-simple: grabs the currently selected page from the page drop-down and saves it in a global
+// this should get called whenever the dropdown gets used
 function update_current_page(){
     current_page = $("#page_list")[0].value;
+    //i think that this edge case doesn't happen any more...leaving this in anyway just in case --Parker
     if(current_page == ""){
-        alert('');
         current_page = $("#page_list")[0].firstChild.firstChild.nodeValue;
     }
 }
 
-
-function prev_rev() {
-    current_page_version_key -= 1;
-    update_next_prev_buttons();
-    update_location_reporting()
-    load_revision()
-}
-
-function next_rev() {
-    current_page_version_key += 1;
-    update_next_prev_buttons();
-    update_location_reporting()
-    load_revision()
-}
-
-function update_wiki_age_reporting() {
-    $('#wiki_age_timestamp').html(current_wiki_earliest_edit_datestr);
-}
-
-function update_location_reporting() {
-    $('#revision_number').html(current_page_version_key+1);
-    $('#total_revision_count').html(current_wiki_sorted_versions[current_page].length);
-}
-
+//update the list of pages in the dropdown, based on what's in our dict mapping page names to lists of revision timestamps
 function update_page_menu(change_dict) {
     var pages = $("#page_list")[0];
     while(pages.hasChildNodes())
@@ -251,187 +307,104 @@ function update_page_menu(change_dict) {
     }
 }
 
+//jump to the previous revision
+function prev_rev() {
+    current_page_version_key -= 1;
+    update_next_prev_buttons();
+    update_location_reporting()
+    load_revision()
+}
+
+//jump to the next revision
+function next_rev() {
+    if(!current_wiki_sorted_versions[current_page][current_page_version_key+1]){
+        alert("you're already at the newest revision!");
+        return false;
+    }
+    current_page_version_key += 1;
+    update_next_prev_buttons();
+    update_location_reporting()
+    load_revision()
+}
+
+function update_wiki_age_reporting() {
+    $('#wiki_age_timestamp').html(current_wiki_earliest_edit_datestr);
+}
+
+function update_location_reporting() {
+    var current_location = current_page_version_key+1;
+    if(in_diff_mode){
+        current_location += "v" + current_page_version_key;
+    }
+    $('#revision_number').html(current_location);
+    $('#total_revision_count').html(current_wiki_sorted_versions[current_page].length);
+}
+
+
+//resize the iframe to fill all (read: most) of the window below the control bar
 function resize_results() {
-    var results = id('results');
+    var results = $('#results')[0];
     var height = 0;
-    var heightMinus = 500;
+    var heightMinus = 85;
 
     // get height of window
     if (window.innerHeight) {
         height = window.innerHeight - 18;
     } else if (document.documentElement && document.documentElement.clientHeight) {
         height = document.documentElement.clientHeight;
-        heightMinus = 187;
+        heightMinus = 75;
     } else if (document.body && document.body.clientHeight) {
         height = document.body.clientHeight;
     }
     results.style.height = Math.round(height - heightMinus) + "px";
 }
-
-
-/*
- * Date Format 1.2.3
- * (c) 2007-2009 Steven Levithan <stevenlevithan.com>
- * MIT license
- *
- * Includes enhancements by Scott Trenda <scott.trenda.net>
- * and Kris Kowal <cixar.com/~kris.kowal>
- *
- * Accepts a date, a mask, or a date and a mask.
- * Returns a formatted version of the given date.
- * The date defaults to the current date/time.
- * The mask defaults to dateFormat.masks.default.
- */
-
-var dateFormat = function () {
-    var	token = /d{1,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|[LloSZ]|"[^"]*"|'[^']*'/g,
-        timezone = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g,
-        timezoneClip = /[^-+\dA-Z]/g,
-        pad = function (val, len) {
-            val = String(val);
-            len = len || 2;
-            while (val.length < len) val = "0" + val;
-            return val;
-        };
-
-    // Regexes and supporting functions are cached through closure
-    return function (date, mask, utc) {
-        var dF = dateFormat;
-
-        // You can't provide utc if you skip other args (use the "UTC:" mask prefix)
-        if (arguments.length == 1 && Object.prototype.toString.call(date) == "[object String]" && !/\d/.test(date)) {
-            mask = date;
-            date = undefined;
-        }
-
-        // Passing date through Date applies Date.parse, if necessary
-        date = date ? new Date(date) : new Date;
-        if (isNaN(date)) throw SyntaxError("invalid date");
-
-        mask = String(dF.masks[mask] || mask || dF.masks["default"]);
-
-        // Allow setting the utc argument via the mask
-        if (mask.slice(0, 4) == "UTC:") {
-            mask = mask.slice(4);
-            utc = true;
-        }
-
-        var	_ = utc ? "getUTC" : "get",
-            d = date[_ + "Date"](),
-            D = date[_ + "Day"](),
-            m = date[_ + "Month"](),
-            y = date[_ + "FullYear"](),
-            H = date[_ + "Hours"](),
-            M = date[_ + "Minutes"](),
-            s = date[_ + "Seconds"](),
-            L = date[_ + "Milliseconds"](),
-            o = utc ? 0 : date.getTimezoneOffset(),
-            flags = {
-                d:    d,
-                dd:   pad(d),
-                ddd:  dF.i18n.dayNames[D],
-                dddd: dF.i18n.dayNames[D + 7],
-                m:    m + 1,
-                mm:   pad(m + 1),
-                mmm:  dF.i18n.monthNames[m],
-                mmmm: dF.i18n.monthNames[m + 12],
-                yy:   String(y).slice(2),
-                yyyy: y,
-                h:    H % 12 || 12,
-                hh:   pad(H % 12 || 12),
-                H:    H,
-                HH:   pad(H),
-                M:    M,
-                MM:   pad(M),
-                s:    s,
-                ss:   pad(s),
-                l:    pad(L, 3),
-                L:    pad(L > 99 ? Math.round(L / 10) : L),
-                t:    H < 12 ? "a"  : "p",
-                tt:   H < 12 ? "am" : "pm",
-                T:    H < 12 ? "A"  : "P",
-                TT:   H < 12 ? "AM" : "PM",
-                Z:    utc ? "UTC" : (String(date).match(timezone) || [""]).pop().replace(timezoneClip, ""),
-                o:    (o > 0 ? "-" : "+") + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4),
-                S:    ["th", "st", "nd", "rd"][d % 10 > 3 ? 0 : (d % 100 - d % 10 != 10) * d % 10]
-            };
-
-        return mask.replace(token, function ($0) {
-            return $0 in flags ? flags[$0] : $0.slice(1, $0.length - 1);
-        });
-    };
-}();
-
-// Some common format strings
-dateFormat.masks = {
-    "default":      "ddd mmm dd yyyy HH:MM:ss",
-    shortDate:      "m/d/yy",
-    mediumDate:     "mmm d, yyyy",
-    longDate:       "mmmm d, yyyy",
-    fullDate:       "dddd, mmmm d, yyyy",
-    shortTime:      "h:MM TT",
-    mediumTime:     "h:MM:ss TT",
-    longTime:       "h:MM:ss TT Z",
-    isoDate:        "yyyy-mm-dd",
-    isoTime:        "HH:MM:ss",
-    isoDateTime:    "yyyy-mm-dd'T'HH:MM:ss",
-    isoUtcDateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"
-};
-
-// Internationalization strings
-dateFormat.i18n = {
-    dayNames: [
-        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
-        "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-    ],
-    monthNames: [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-        "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
-    ]
-};
-
-// For convenience...
-Date.prototype.format = function (mask, utc) {
-    return dateFormat(this, mask, utc);
-};
-
 </script>
 </head>
 
 <body>
     <div id="top_bar">
-        <p class="info_text">       
-            <form id="get_revs" name="get_revs">
-                Wiki domain:<input type="text" name="wiki_url" size="30"/>
-                <!--From: <input type="text" id="after" name="after"/> -->
-                <input type="button" value="Get history" onClick="set_wiki()"/>
-                page: 
-                <select id="page_list"/>
-                    <option value="empty">(page list currently empty)</option>
-                </select>
-                <br />
-                <span id="rev_list">
-                    revision 
-                <span id="revision_number">X</span>/<span id="total_revision_count">X</span>
-                (where 1 is the most recent)
-                </span>
-                <span id="wiki_age">
-                    This wiki was created
-                <span id="wiki_age_timestamp">XXXX-XX-XX-XX-XX-XX</span>
-                .
-                </span>
-                <br />
-                navigation:
-                <input type="button" value="< Newer" onClick="prev_rev()" id="prev_button"/>
-                <input type="button" value="Older >" onClick="next_rev()" id="next_button"/>
-                Days since wiki creation: <input type="text" id="since" name="since"/>
-                <input type="button" value="Go" onClick="days_since()"/>
-                <input type="button" value="difference from prev" onClick="diff_against_prev()"/>
-            </form>
-        </p>
+    <form id="get_revs" name="get_revs">
+            Wiki domain:<input type="text" name="wiki_url" size="30"/>
+            <!--From: <input type="text" id="after" name="after"/> -->
+            <input type="button" value="Set wiki" onClick="set_wiki()"/>
+            page: 
+            <select id="page_list"/>
+                <option value="empty">(page list currently empty)</option>
+            </select>
+            <br />
+            filter by days from wiki creation:
+            <select id="filter_by_days_since"/>
+                <option value="99999">(unfiltered)</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="7">7</option>
+                <option value="30">30</option>
+                <option value="100">100</option>
+                <option value="400">400</option>
+            </select>
+            <span id="wiki_age">
+                This wiki was created
+            <span id="wiki_age_timestamp">XXXX-XX-XX-XX-XX-XX</span>
+            <br />
+            <span id="rev_list">
+                revision 
+            <span id="revision_number">X</span>/<span id="total_revision_count">X</span>
+            <span style="font-size:.8em;">(1 is the oldest)</span>
+            </span>
+            </span>
+            |
+            navigation:
+            <input type="button" value="< Older" onClick="prev_rev()" id="prev_button"/>
+            <input type="button" value="Newer >" onClick="next_rev()" id="next_button"/>
+            <!--Days since wiki creation: <input type="text" id="since" name="since"/>
+            <input type="button" value="Go" onClick="days_since()"/>
+            -->
+            <input type="button" id="diff_button" value="difference from prev" onClick="diff_click()"/>
+            <input type="button" id="supernext_button" value="SuperNext>>" onClick="supernext()"/>
+        </form>
     </div>
     <div id="results-box">
-      <iframe src="" id="results" name="results" frameborder="0" border="0"><p>THIS WONT WORK WITHOUT IFRAMES</p></iframe>
+        <iframe src="" id="results" name="results" frameborder="0" border="0"><p>THIS WONT WORK WITHOUT IFRAMES</p></iframe>
     </div>
 
 </body>
