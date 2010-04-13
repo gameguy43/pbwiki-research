@@ -86,7 +86,7 @@ def examine_wiki(url):
 
 def get_wikilist():
     # Read the semi-private list of wikis from file
-    l = open('./list', 'r')
+    l = open('./nocheckin/wiki-list.txt', 'r')
     ll = []
     for row in l:
         ll.append(row)    
