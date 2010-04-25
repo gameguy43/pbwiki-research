@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData, Column, Table
 from sqlalchemy import Integer, Text
@@ -35,6 +36,5 @@ wikis_table = Table('edu_wikis', metadata,
 
 metadata.create_all()
 
-
-def table_from_wiki(id, url, pages)
-    pass
+if __name__ == '__main__':
+    wd = glue()

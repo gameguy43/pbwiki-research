@@ -8,4 +8,3 @@ Restating point 1:
 Restating point 2:
   Narrative:
 Teacher visits webpage.  Teacher enters URL to subject wiki, chooses starting date and ending date.  The webpage renders the total difference between starting date and ending date for a page of the subject wiki.  Teacher is provided with a dropdown menu of available wiki pages.
-
