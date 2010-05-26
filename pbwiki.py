@@ -56,6 +56,26 @@ class PBWiki(object):
       # TODO: These next two lines are fragile - replace with a proper JSON parser
       json_translation_table = {'true': True, 'false': False, 'null': None}
       return eval(json, json_translation_table, {})  
+
+    def api_call(self, oper, **kwargs):
+      """Make an API call against a pbwiki site.
+      oper - the operation to perform
+      ** any other keyword arguments are passed on to the API call
+      """
+      # Generate an appropriate API call URL
+      kwargs['_type'] = 'jsontext'
+      argstr = '/'.join(["%s/%s" % (k,v) for k, v in kwargs.iteritems()])
+      call_url = '%s/api_v2/op/%s/%s' % (self.url, oper, argstr)
+      #print call_url
+      # Fetch text and strip off first and last lines, which are comment tags
+      doc = urlopen(call_url)
+      json = '\n'.join(doc.read().split('\n')[1:-2])
+      doc.close()
+  
+      # Use eval to get a python dict (JSON looks a lot like python)
+      # TODO: These next two lines are fragile - replace with a proper JSON parser
+      json_translation_table = {'true': True, 'false': False, 'null': None}
+      return eval(json, json_translation_table, {})  
   
     def grouped_by_date(self, level=DAY):
       """Fetch all revisions of all pages for a site, grouped by revision dates.
